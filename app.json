@@ -1,4 +1,7 @@
 {
+  "android": {
+    "softwareKeyboardLayoutMode": "pan"
+  },
   "expo": {
     "name": "codebook",
     "slug": "codebook",

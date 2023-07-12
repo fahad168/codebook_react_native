@@ -1,21 +1,32 @@
-import { StatusBar } from 'expo-status-bar';
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-
+import React, {useEffect, useState} from 'react';
+import BottomBar from "./src/bottom_bar/bottom_bar";
+import {NavigationContainer} from "@react-navigation/native";
+import SplashScreen from "./src/components/splash_screen";
+import { StatusBar } from 'react-native';
+import MainStack from "./src/components/stack_screens/main_stack";
+import {store} from "./redux/store";
+import { Provider } from 'react-redux';
 export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    const [showSplash, setShowSplash] = useState(true)
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setShowSplash(false);
+        }, 4000);
+
+        return () => clearTimeout(timer);
+    }, []);
+
+    return (
+        <>
+            <StatusBar backgroundColor="black" />
+            <Provider store={store}>
+                {
+                    showSplash ? (<SplashScreen/>) : (
+                        <MainStack/>
+                    )
+                }
+            </Provider>
+        </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
