@@ -5,6 +5,7 @@ import Login from "../Authentication/login";
 import SignUp from "../Authentication/sign_up";
 import BottomBar from "../../bottom_bar/bottom_bar";
 import CommentScreen from "../post_components/comment_screen";
+import AddStoryScreen from "../post_components/add_story_screen";
 import {useSelector} from "react-redux";
 
 const Root = createNativeStackNavigator()
@@ -41,6 +42,7 @@ const MainStack = (props) => {
                 >
                     <Root.Screen name='BottomBar' component={BottomBar} options={{animation: 'slide_from_right'}}  />
                     <Root.Screen name='CommentScreen' component={CommentScreen} options={{animation: 'slide_from_right'}} />
+                    <Root.Screen name='AddStoryScreen' component={AddStoryScreen} options={{animation: 'slide_from_right'}} />
                 </Root.Navigator>
             </NavigationContainer>
         )

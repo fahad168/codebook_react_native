@@ -1,5 +1,6 @@
 import React, {useEffect, useRef, useState} from "react";
 import {
+    ActivityIndicator,
     Alert,
     Dimensions,
     Image,
@@ -37,6 +38,8 @@ const CommentScreen = (props) => {
     const [imageModal, setImageModal] = useState(false)
     const [image, setImage] = useState([]);
     const [imageVisible, setImageVisible] = useState(false)
+    const [isSending, setIsSending] = useState(false)
+
 
     const headers = {
         Accept: "application/json",
@@ -86,6 +89,7 @@ const CommentScreen = (props) => {
     }
 
     const createComment = () => {
+        setIsSending(!isSending)
         const headers = {
             Accept: "application/json",
             'Content-Type': 'multipart/form-data',
@@ -114,6 +118,7 @@ const CommentScreen = (props) => {
                 setImage([])
                 setImageVisible(!imageVisible)
                 setComments(newComments)
+                setIsSending(false)
             })
             .catch((error) => {});
     }
@@ -127,6 +132,7 @@ const CommentScreen = (props) => {
     }
 
     const createChildComment = (comment) => {
+        setIsSending(!isSending)
         const headers = {
             Accept: "application/json",
             'Content-Type': 'multipart/form-data',
@@ -156,6 +162,8 @@ const CommentScreen = (props) => {
                 setImage([])
                 setImageVisible(!imageVisible)
                 setChildComments(newChildComments)
+                setIsSending(false)
+
             })
             .catch((error) => {});
     }
@@ -261,11 +269,11 @@ const CommentScreen = (props) => {
                     {
                         isReply ?
                             <TouchableOpacity onPress={() => createChildComment(commentForReply)} style={styles.sendIcon}>
-                                <Ionicons name='send-outline' size={30} color='brown'/>
+                                {isSending ? <ActivityIndicator color='brown' size={20} animating={isSending} /> : <Ionicons name='send-outline' size={30} color='brown'/>}
                             </TouchableOpacity>
                             :
                             <TouchableOpacity onPress={createComment} style={styles.sendIcon}>
-                                <Ionicons name='send-outline' size={30} color='brown'/>
+                                {isSending ? <ActivityIndicator color='brown' size={20} animating={isSending} /> : <Ionicons name='send-outline' size={30} color='brown'/>}
                             </TouchableOpacity>
                     }
                 </View>

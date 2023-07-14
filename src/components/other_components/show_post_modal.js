@@ -8,10 +8,12 @@ import {
     Dimensions,
     ActivityIndicator,
     Text,
-    TouchableWithoutFeedback
+    TouchableWithoutFeedback, Share
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import {Video} from "expo-av";
+import ShareMedia from "./share_media";
+import moment from "moment/moment";
 const screen = Dimensions.get('window');
 
 const ShowPostModal = ({ imageModal, setImageModal, type, content, navigation, post }) => {
@@ -21,7 +23,7 @@ const ShowPostModal = ({ imageModal, setImageModal, type, content, navigation, p
         <Modal visible={imageModal} animationType="slide" transparent={true}>
             <TouchableWithoutFeedback onPress={() => setButtonModal(!buttonModal)}>
                 <View style={styles.imageModalContainer}>
-                    <View>
+                    <View style={{zIndex: 1}}>
                         <TouchableOpacity onPress={() => setImageModal(!imageModal)}>
                             <Ionicons name="close-outline" size={40} color="white"/>
                         </TouchableOpacity>
@@ -32,7 +34,7 @@ const ShowPostModal = ({ imageModal, setImageModal, type, content, navigation, p
                             type === 'video' || type === 'video/mp4' ?
                                 <Video
                                     source={{uri: `${content}`}}
-                                    style={{ width: screen.width, height: screen.height }}
+                                    style={{ width: screen.width, height: screen.height, bottom: 50 }}
                                     onLoadStart={() => setImageLoading(true)} onLoadEnd={() => setImageLoading(false)}
                                     resizeMode='contain'
                                     isLooping={true}
@@ -40,7 +42,7 @@ const ShowPostModal = ({ imageModal, setImageModal, type, content, navigation, p
                                     shouldPlay
                                 /> :
                                 <Image source={{uri: `${content}`}}
-                                       style={{ width: screen.width, height: screen.height }}
+                                       style={{ width: screen.width, height: screen.height, bottom: 40}}
                                        resizeMode="contain"
                                        onLoadStart={() => setImageLoading(true)} onLoadEnd={() => setImageLoading(false)}
                                 />
@@ -49,25 +51,34 @@ const ShowPostModal = ({ imageModal, setImageModal, type, content, navigation, p
                         <Modal visible={buttonModal} animationType='fade' transparent={true}>
                             <TouchableWithoutFeedback onPress={() => setButtonModal(!buttonModal)}>
                                 <View style={styles.mainButtonModal}>
-                                    {/*<View style={styles.userDetails}>*/}
-                                    {/*    <Text style={{color: 'white'}}>Hello</Text>*/}
-                                    {/*</View>*/}
+                                    <TouchableOpacity style={styles.userDetails}>
+                                        <View>
+                                            <Image
+                                                source={post?.user?.profile_image ? {uri: post?.user?.profile_image} : require('../../../assets/dummy_profile.png')}
+                                                resizeMode='contain'
+                                                style={styles.dummy}></Image>
+                                        </View>
+                                        <View style={styles.innerText}>
+                                            <Text style={styles.innerTextName}>{post?.user?.username}</Text>
+                                            <Text style={styles.innerTextMinutes}>{moment(post?.created_at).startOf("seconds").fromNow()}</Text>
+                                        </View>
+                                    </TouchableOpacity>
                                     <View style={styles.buttonsModal}>
-                                        <View style={styles.postIcons}>
-                                            <TouchableOpacity style={styles.innerModal}>
+                                        <View style={type === 'video' || type === 'video/mp4' ? styles.videoPostIcons : styles.postIcons}>
+                                            <TouchableOpacity style={type === 'video' || type === 'video/mp4' ? styles.videoInnerModal : styles.innerModal}>
                                                 <Ionicons name='heart-outline' size={35} color='white'
                                                           style={styles.icons}></Ionicons>
-                                                <Text style={styles.innerModalText}>Like</Text>
+                                                {type === 'video' || type === 'video/mp4' ? <Text style={styles.innerModalText}>1</Text> : <Text style={styles.innerModalText}>Like</Text>}
                                             </TouchableOpacity>
-                                            <TouchableOpacity style={styles.innerModal} onPress={() => navigation.navigate('CommentScreen', {post: post})}>
+                                            <TouchableOpacity style={type === 'video' || type === 'video/mp4' ? styles.videoInnerModal : styles.innerModal} onPress={() => {setImageModal(!imageModal); navigation.navigate('CommentScreen', {post: post})}}>
                                                 <Ionicons name='chatbubbles-outline' size={35} color='white'
                                                           style={styles.icons}/>
-                                                <Text style={styles.innerModalText}>Comments</Text>
+                                                {type === 'video' || type === 'video/mp4' ? <Text style={styles.innerModalText}>10</Text> : <Text style={styles.innerModalText}>Comments</Text>}
                                             </TouchableOpacity>
-                                            <TouchableOpacity style={styles.innerModal}>
+                                            <TouchableOpacity style={type === 'video' || type === 'video/mp4' ? styles.videoInnerModal : styles.innerModal}  onPress={() => ShareMedia(content)}>
                                                 <Ionicons name='share-social-outline' size={35} color='white'
                                                           style={styles.icons}/>
-                                                <Text style={styles.innerModalText}>Share</Text>
+                                                {type === 'video' || type === 'video/mp4' ? <Text style={styles.innerModalText}>20</Text> : <Text style={styles.innerModalText}>Share</Text>}
                                             </TouchableOpacity>
                                         </View>
                                     </View>
@@ -106,10 +117,11 @@ const styles = StyleSheet.create({
     },
     userDetails: {
         flex: 1,
-        flexDirection: 'column',
+        flexDirection: 'row',
         justifyContent: 'flex-end',
         position: 'absolute',
-        bottom: 100
+        bottom: 100,
+        zIndex: 1,
     },
     innerModal: {
       flexDirection: 'row'
@@ -127,6 +139,34 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-around',
     },
+    videoPostIcons: {
+        flexDirection: 'column',
+        bottom: 30,
+        right: 20,
+        alignSelf: 'flex-end'
+    },
+    videoInnerModal: {
+        flexDirection: 'column',
+        paddingBottom: 20,
+    },
+    dummy: {
+        marginLeft: 15,
+        width: 50,
+        height: 50,
+        borderRadius: 50,
+    },
+    innerText: {
+        marginLeft: 15,
+        marginTop: 3
+    },
+    innerTextName: {
+        color: 'white'
+    },
+    innerTextMinutes: {
+        color: 'white',
+        fontSize: 12,
+        marginTop: 4,
+    }
 })
 
 export default ShowPostModal

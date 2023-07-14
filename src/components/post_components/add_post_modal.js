@@ -11,7 +11,6 @@ import {
     ActivityIndicator,
     Alert
 } from "react-native";
-import ImageResizer from 'react-native-image-resizer';
 import Ionicons from "react-native-vector-icons/Ionicons";
 import * as ImagePicker from 'expo-image-picker';
 import { Video } from 'expo-av';

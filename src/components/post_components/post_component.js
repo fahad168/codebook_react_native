@@ -7,8 +7,9 @@ import {
     StyleSheet,
     Dimensions,
     TouchableOpacity,
-    ActivityIndicator, Alert, Share, TouchableWithoutFeedback
+    ActivityIndicator, Alert, Share, TouchableWithoutFeedback, ScrollView
 } from 'react-native'
+import Modal from "react-native-modal";
 import { TapGestureHandler, State } from 'react-native-gesture-handler';
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { Video } from 'expo-av';
@@ -21,6 +22,7 @@ const screenWidth = Dimensions.get('window').width;
 const screenHeight = Dimensions.get('window').height;
 import { useNavigation } from "@react-navigation/native";
 import ShowPostModal from "../other_components/show_post_modal";
+import ShareMedia from "../other_components/share_media";
 
 const PostComponent = ({post}) => {
     const navigation = useNavigation()
@@ -43,28 +45,6 @@ const PostComponent = ({post}) => {
     const handleModal = () => {
         setToggleModal(!toggleModal)
     }
-
-    const shareMedia = async (mediaUri) => {
-        try {
-           const response =  await Share.share({
-                url: mediaUri,
-                message: `${mediaUri}`,
-                filename: 'media',
-                type: 'image',
-            });
-            if (response.action === Share.sharedAction) {
-                if (response.activityType) {
-                    console.log(`Media shared successfully via ${response.activityType}`);
-                } else {
-                    console.log('Media shared successfully');
-                }
-            } else if (response.action === Share.dismissedAction) {
-                console.log('Share menu dismissed');
-            }
-        } catch (error) {
-            console.error(error);
-        }
-    };
 
     const handleImageModal = (url, type) => {
         setContent(url)
@@ -109,15 +89,73 @@ const PostComponent = ({post}) => {
                 </TouchableOpacity>
                 <TouchableOpacity onPress={handleModal}>
                     <Ionicons name="ellipsis-horizontal-outline" size={25} color='brown' style={styles.dotIcon}/>
-                    {toggleModal && (
+                    <Modal
+                        style={{margin: 0}}
+                        isVisible={toggleModal}
+                        animationIn={"slideInUp"}
+                        onSwipeComplete={handleModal}
+                        swipeDirection={'down'}
+                        swipeThreshold={100}
+                        backdropColor='transparent'
+                        hasBackdrop={true}
+                    >
                         <View style={styles.dropdownContainer}>
-                            <View style={styles.dropdownContent}>
-                                <TouchableOpacity><Text style={{ color: 'white' }}>Report</Text></TouchableOpacity>
-                                <TouchableOpacity><Text style={{ color: 'white' }}>Flag</Text></TouchableOpacity>
-                                <TouchableOpacity><Text style={{ color: 'white' }}>Hide Post</Text></TouchableOpacity>
-                            </View>
+                                <TouchableOpacity style={{ alignSelf: 'center', top: 33, zIndex: 1 }}>
+                                    <Ionicons name="remove-outline" size={45} color='white'/>
+                                </TouchableOpacity>
+                                <View style={styles.dropdownContent}>
+                                    <View style={[{marginTop: 40}, styles.innerDivStyle1]}>
+                                        <View style={styles.textView}>
+                                            <TouchableOpacity style={styles.touchableOpacity}>
+                                                <Ionicons name='trash-outline' color='white' size={35}/><
+                                                Text style={styles.text}>Delete Post</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+                                    <View style={styles.innerDivStyle}>
+                                        <View style={styles.textView}>
+                                            <TouchableOpacity style={styles.touchableOpacity}>
+                                                <Ionicons name='eye-off-outline' color='white' size={35}/>
+                                                <Text style={styles.text}>Hide This Post</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity style={styles.touchableOpacity}>
+                                                <Ionicons name='eye-off-outline' color='white' size={35}/>
+                                                <Text style={styles.text}>Hide All {post?.user?.username} Posts </Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity style={styles.touchableOpacity}>
+                                                <Ionicons name='flag-outline' color='white' size={35}/><
+                                                Text style={styles.text}>Flag Post</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+                                    <View style={styles.innerDivStyle}>
+                                        <View style={styles.textView}>
+                                            <TouchableOpacity style={styles.touchableOpacity}>
+                                                <Ionicons name='trash-outline' color='white' size={35}/><
+                                                Text style={styles.text}>Report Post</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity style={styles.touchableOpacity}>
+                                                <Ionicons name='eye-off-outline' color='white' size={35}/>
+                                                <Text style={styles.text}>Report User ( {post?.user?.username} )</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity style={styles.touchableOpacity}>
+                                                <Ionicons name='eye-off-outline' color='white' size={35}/>
+                                                <Text style={styles.text}>Report And Block User
+                                                    ( {post?.user?.username} )</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+                                    <View style={[{marginTop: 10}, styles.innerDivStyle1]}>
+                                        <View style={styles.textView}>
+                                            <TouchableOpacity style={styles.touchableOpacity}>
+                                                <Ionicons name='trash-outline' color='white' size={35}/><
+                                                Text style={styles.text}>Block User ( {post?.user?.username} )</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+                                </View>
                         </View>
-                    )}
+                    </Modal>
                 </TouchableOpacity>
             </View>
             <View style={{ flex: 1 }}>
@@ -152,7 +190,7 @@ const PostComponent = ({post}) => {
                 <TouchableOpacity onPress={() => navigation.navigate('CommentScreen', {post: post})}>
                     <Ionicons name='chatbubbles-outline' size={35} color='black' style={styles.icons}/>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => shareMedia(post?.post_image)}>
+                <TouchableOpacity onPress={() => ShareMedia(post?.post_image)}>
                     <Ionicons name='share-social-outline' size={35} color='black' style={styles.icons}/>
                 </TouchableOpacity>
             </View>
@@ -237,20 +275,46 @@ const styles = StyleSheet.create({
         paddingRight: 50,
     },
     dropdownContainer: {
-        backgroundColor: 'brown',
-        alignSelf: 'flex-end',
-        position: 'absolute',
-        borderRadius: 10,
-        height: 110,
-        width: 90,
-        right: 12,
-        top: 45,
+        flex: 1,
+        justifyContent: 'flex-end',
     },
     dropdownContent: {
-        flex: 1,
+        backgroundColor: '#484848',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        height: 570,
         flexDirection: 'column',
-        justifyContent: 'space-evenly',
+        justifyContent: 'flex-start',
+        alignItems: 'center',
+    },
+    innerDivStyle: {
+        backgroundColor: '#383838',
+        alignItems: "flex-start",
+        width: "90%",
+        height: 175,
+        borderRadius: 15,
+        marginTop: 10,
+    },
+    innerDivStyle1: {
+        backgroundColor: '#383838',
+        alignItems: "flex-start",
+        width: "90%",
+        height: 65,
+        borderRadius: 15,
+    },
+    textView: {
+        left: 30,
+    },
+    touchableOpacity: {
+        flexDirection: 'row',
+        paddingTop: 10,
+    },
+    text: {
+        color: 'white',
         alignSelf: 'center',
+        left: 20,
+        fontSize: 15,
+        fontWeight: 'bold'
     },
     description: {
         marginTop: 15,

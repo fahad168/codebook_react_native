@@ -6,22 +6,22 @@ import {
     Text,
     TouchableOpacity,
     ScrollView,
-    TextInput,
-    Modal,
     Dimensions,
-    SafeAreaView, Button
+    SafeAreaView, Button, TouchableWithoutFeedback
 } from 'react-native'
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
+import Modal from 'react-native-modal'
 import LatestPosts from "../post_components/latest_posts";
 import TrendingPosts from "../post_components/trending_posts";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import GestureRecognizer from 'react-native-swipe-gestures'
 import ShowStory from "../post_components/show_story";
 import {useDispatch, useSelector} from "react-redux";
 import { Logout } from "../../../redux/actions/action";
-
-const screenWidth = Dimensions.get('window').width;
-const screenHeight = Dimensions.get('window').height;
+import * as ImagePicker from "expo-image-picker";
+import {useIsFocused, useNavigation} from "@react-navigation/native";
+import { Backend_Url } from '@env'
+import axios from "axios";
+import Toast from "react-native-simple-toast";
 
 const Tab = createMaterialTopTabNavigator();
 const CustomTabBar = ({ state, descriptors, navigation }) => {
@@ -59,11 +59,64 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
 };
 
 const HomeScreen = () => {
-    const { user } = useSelector((state) => state.loginReducer);
+    const { user, token } = useSelector((state) => state.loginReducer);
     const [modalVisible, setModalVisible] = useState(false)
     const [storyModalVisible, setStoryModalVisible] = useState(false)
-    const [latestPosts, setLatestPosts] = useState([])
+    const [storyPicker, setStoryPicker] = useState(false)
+    const [addStory, setAddStory] = useState(false)
+    const [currentUserStories, setCurrentUserStories] = useState([])
+    const [image, setImage] = useState([]);
     const dispatch = useDispatch();
+    const navigation = useNavigation()
+    const homeFocused = useIsFocused()
+    const headers = {
+        Accept: "application/json",
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+    };
+
+    useEffect(() => {
+        if (homeFocused){
+            getCurrentUserStories()
+        }
+    }, [homeFocused]);
+
+    const getCurrentUserStories = () => {
+        axios
+            .get(`${Backend_Url}/stories` , {headers})
+            .then((res) => {
+                console.log(res?.data?.stories)
+                setCurrentUserStories(res?.data?.stories)
+            })
+            .catch((error) => console.log(error));
+    }
+
+    const selectStoryPic = async (key) => {
+        let result
+        setImage([])
+        if (key === 'select'){
+            result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.All,
+                quality: 1,
+                allowsEditing: true,
+            });
+        }else if(key === 'take'){
+            result = await ImagePicker.launchCameraAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.All,
+                allowsEditing: true,
+                quality: 1,
+            });
+        }
+
+        if (!result.canceled) {
+            image.push(result)
+            setStoryPicker(false)
+            setStoryModalVisible(false)
+            navigation.navigate('AddStoryScreen', { image: image })
+        }else{
+            console.log('canceled')
+        }
+    }
 
     const handleCloseModal = () => {
         setModalVisible(!modalVisible)
@@ -76,6 +129,11 @@ const HomeScreen = () => {
         setStoryModalVisible(!storyModalVisible)
     }
 
+    const handleStoryPicker = () => {
+        setStoryPicker(false)
+    }
+
+
     const stories = [
         { id: 1, url: require('../../../assets/splashscreen.jpg') },
         { id: 2, url: require('../../../assets/gradient.png') },
@@ -83,13 +141,14 @@ const HomeScreen = () => {
         { id: 4, url: require('../../../assets/profile_dummy.jpg') },
 
     ]
+
     return(
         <View style={styles.mainView}>
             <Button title='Logout' onPress={() => dispatch(Logout())}></Button>
             <View style={styles.innerView}>
-                <TouchableOpacity style={{ zIndex: 1 }}>
+                <TouchableOpacity style={{ zIndex: 1 }} onPress={currentUserStories !== [] ? handleStoryModal : handleStoryPicker}>
                     <View>
-                        <Image source={user.img ? { uri: user.img } : require('../../../assets/dummy_profile.png')} resizeMode='contain' style={user.img ? styles.profileImage : styles.dummy}/>
+                        <Image source={user.img ? { uri: user.img } : require('../../../assets/dummy_profile.png')} resizeMode='contain' style={user.img ? [{ borderColor: currentUserStories !== [] ? 'brown' : 'black' } ,styles.profileImage] : [ { borderColor: currentUserStories !== [] ? 'brown' : 'black' } ,styles.dummy]}/>
                         <View style={styles.addIcon}>
                             <Ionicons name='add-circle' size={25} color='white'/>
                         </View>
@@ -157,20 +216,80 @@ const HomeScreen = () => {
                     <Tab.Screen name="Trending" component={TrendingPosts} />
                 </Tab.Navigator>
             </View>
-            {
-                storyModalVisible ?
-                <GestureRecognizer
-                    onSwipeDown={handleStoryModal}
-                >
-                    <Modal visible={storyModalVisible} animationType='slide'>
+            {/*<Modal style={{margin: 0}}*/}
+            {/*       isVisible={storyModalVisible}*/}
+            {/*       animationIn={"slideInUp"}*/}
+            {/*       onSwipeComplete={handleStoryModal}*/}
+            {/*       swipeDirection={'down'}*/}
+            {/*       swipeThreshold={100}*/}
+            {/*       backdropColor='transparent'*/}
+            {/*       hasBackdrop={true}*/}
+            {/*>*/}
+            {/*    <SafeAreaView style={styles.storyModalContainer}>*/}
+            {/*        <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>*/}
+            {/*            <ShowStory stories={stories} handleStoryModal={handleStoryModal}/>*/}
+            {/*        </View>*/}
+            {/*    </SafeAreaView>*/}
+            {/*</Modal>*/}
+            <Modal style={{margin: 0}}
+                   isVisible={currentUserStories ? storyModalVisible : storyPicker}
+                   animationIn={"slideInUp"}
+                   onSwipeComplete={currentUserStories ? handleStoryModal : handleStoryPicker}
+                   swipeDirection={'down'}
+                   swipeThreshold={100}
+                   backdropColor='transparent'
+                   hasBackdrop={true}
+                   onBackdropPress={handleStoryPicker}
+            >
+                {
+                    currentUserStories !== [] ?
                         <SafeAreaView style={styles.storyModalContainer}>
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                <ShowStory stories={stories} handleStoryModal={handleStoryModal} />
+                            <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+                                <ShowStory stories={currentUserStories} handleStoryModal={handleStoryModal}/>
+                            </View>
+                        </SafeAreaView> :
+                        <SafeAreaView style={styles.storyAddContainer}>
+                            <View style={styles.modalContainer}>
+                                <View style={styles.modalContent}>
+                                    <TouchableOpacity style={{alignSelf: 'center'}}
+                                                      onPress={() => selectStoryPic('select')}>
+                                        <Ionicons name='images-outline' size={50} color='white'/>
+                                        <Text style={styles.modalText}>Select Photo</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity style={{alignSelf: 'center'}}
+                                                      onPress={() => selectStoryPic('take')}>
+                                        <Ionicons name='camera-outline' size={50} color='white'/>
+                                        <Text style={styles.modalText}>Take Photo</Text>
+                                    </TouchableOpacity>
+                                </View>
                             </View>
                         </SafeAreaView>
-                    </Modal>
-                </GestureRecognizer> : ""
-            }
+                }
+            </Modal>
+            {/*<Modal style={{margin: 0}}*/}
+            {/*       isVisible={storyPicker}*/}
+            {/*       animationIn={"slideInUp"}*/}
+            {/*       onSwipeComplete={handleStoryPicker}*/}
+            {/*       swipeDirection={'down'}*/}
+            {/*       swipeThreshold={100}*/}
+            {/*       backdropColor='transparent'*/}
+            {/*       hasBackdrop={true}*/}
+            {/*>*/}
+            {/*    <SafeAreaView style={styles.storyModalContainer}>*/}
+            {/*            <View style={styles.modalContainer}>*/}
+            {/*                <View style={styles.modalContent}>*/}
+            {/*                    <TouchableOpacity style={{ alignSelf: 'center' }} onPress={() => selectStoryPic('select')}>*/}
+            {/*                        <Ionicons name='images-outline' size={50} color='white'/>*/}
+            {/*                        <Text style={styles.modalText}>Select Photo</Text>*/}
+            {/*                    </TouchableOpacity>*/}
+            {/*                    <TouchableOpacity style={{ alignSelf: 'center' }} onPress={() => selectStoryPic('take')}>*/}
+            {/*                        <Ionicons name='camera-outline' size={50} color='white'/>*/}
+            {/*                        <Text style={styles.modalText}>Take Photo</Text>*/}
+            {/*                    </TouchableOpacity>*/}
+            {/*                </View>*/}
+            {/*            </View>*/}
+            {/*    </SafeAreaView>*/}
+            {/*</Modal>*/}
         </View>
     )
 }
@@ -195,7 +314,6 @@ const styles = StyleSheet.create({
         height: 50,
         borderRadius: 50,
         position: 'absolute',
-        borderColor: 'black',
         borderWidth: 1
     },
     mainView: {
@@ -261,6 +379,26 @@ const styles = StyleSheet.create({
     },
     storyModalContainer: {
         flex: 1,
+        backgroundColor: 'black'
+    },
+    storyAddContainer: {
+        flex: 1,
+    },
+    modalContainer: {
+        flex: 1,
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
         backgroundColor: 'black',
+        borderTopLeftRadius: 15,
+        borderTopRightRadius: 15,
+        height: 200
+    },
+    modalText: {
+        color: 'white',
+        right: 11,
+        top: 5
     },
 })

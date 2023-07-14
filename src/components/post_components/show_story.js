@@ -1,40 +1,53 @@
 import React, {useEffect, useState} from 'react';
-import {View, Image, Dimensions, TouchableWithoutFeedback, TouchableOpacity, StyleSheet} from 'react-native';
+import {
+    View,
+    Image,
+    Dimensions,
+    TouchableWithoutFeedback,
+    TouchableOpacity,
+    StyleSheet,
+    ActivityIndicator, Text
+} from 'react-native';
 import Ionicons from "react-native-vector-icons/Ionicons";
+import { Video } from "expo-av";
+import moment from "moment/moment";
 const screenWidth = Dimensions.get('window').width;
 const screenHeight = Dimensions.get('window').height;
 
 const ShowStory = (props) => {
     const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
     const [progress, setProgress] = useState(Array.from({length: props.stories.length}, () => 0));
-    const width = (100/props.stories.length)
+    const [imageLoading, setImageLoading] = useState(false)
 
     const currentStory = props.stories[currentStoryIndex];
+    console.log("stroy",currentStory)
 
     useEffect(() => {
         const interval = setInterval(() => {
-            setProgress(prevProgress => {
-                const newProgress = [...prevProgress];
-                newProgress[currentStoryIndex] += 2;
+            if (!imageLoading) {
+                setProgress((prevProgress) => {
+                    const newProgress = [...prevProgress];
+                    newProgress[currentStoryIndex] += 2;
 
-                if (newProgress[currentStoryIndex] >= 100) {
-                    clearInterval(interval);
-                    if (currentStoryIndex < props.stories.length - 1) {
-                        setCurrentStoryIndex(prevIndex => prevIndex + 1);
-                    } else {
-                        props.handleStoryModal()
+                    if (newProgress[currentStoryIndex] >= 100) {
+                        clearInterval(interval);
+                        if (currentStoryIndex < props.stories.length - 1) {
+                            setCurrentStoryIndex((prevIndex) => prevIndex + 1);
+                            setProgress(Array.from({ length: props.stories.length }, () => 0));
+                        } else {
+                            props.handleStoryModal();
+                        }
                     }
-                }
 
-                return newProgress;
-            });
-        }, 50);
+                    return newProgress;
+                });
+            }
+        }, currentStory?.duration ? currentStory.duration/60 : 50);
 
         return () => clearInterval(interval);
-    }, [currentStoryIndex]);
+    }, [currentStoryIndex, imageLoading]);
 
     const handleStoryPress = () => {
-        console.log('here')
         if (currentStoryIndex < props.stories.length - 1) {
             setCurrentStoryIndex(prevIndex => prevIndex + 1);
             setProgress(Array.from({ length: props.stories.length }, () => 0));
@@ -46,12 +59,12 @@ const ShowStory = (props) => {
     return (
         <TouchableWithoutFeedback style={{flex: 1, justifyContent: 'center'}}
                                   onPress={handleStoryPress}>
-            <View>
-                <View style={{flexDirection: 'row'}}>
+            <View style={{ width: '100%' }}>
+                <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
                     {props.stories.map((story, index) => (
                         <View
                             key={story.id}
-                            style={{width: `${width}%`, height: 2, backgroundColor: 'grey' , marginRight: 5}}
+                            style={{ flex: 1, height: 2, backgroundColor: (index !== currentStoryIndex && index < currentStoryIndex ? 'brown' : 'grey'), marginLeft: index !== 0 ? 3 : 0}}
                         >
                             <View
                                 style={{
@@ -63,15 +76,47 @@ const ShowStory = (props) => {
                         </View>
                     ))}
                 </View>
-                <TouchableOpacity onPress={() => props.handleStoryModal()}>
-                    <Ionicons name="close-outline" size={30} color="white" style={{ position: 'absolute', left: screenWidth - 30, top: 10}} />
+                <TouchableOpacity style={{ zIndex: 1 }} onPress={() => props.handleStoryModal()}>
+                    <Ionicons name="close-outline" size={30} color="white" style={{ position: 'absolute', left: screenWidth - 35, top: 10}} />
                 </TouchableOpacity>
-                <TouchableOpacity>
-                    <Image source={require('../../../assets/profile_dummy.jpg')} resizeMode='contain'
-                           style={styles.userProfile}/>
+                <TouchableOpacity style={{zIndex: 1, flexDirection: 'row'}}>
+                    <View>
+                        <Image
+                            source={currentStory?.user?.profile_image ? {uri: currentStory?.user?.profile_image} : require('../../../assets/dummy_profile.png')}
+                            resizeMode='contain'
+                            style={styles.userProfile}/>
+                    </View>
+                    <View style={{ left: 80, top: 18 }}>
+                        <Text style={{color: 'white', fontSize: 15}}>{currentStory?.user?.username}</Text>
+                        <Text style={{color: 'white', fontSize: 12}}>{moment(currentStory?.created_at).startOf("seconds").fromNow()}</Text>
+                    </View>
                 </TouchableOpacity>
-                <Image source={currentStory.url} resizeMode='contain'
-                       style={{width: screenWidth, height: screenHeight}}/>
+                <View style={{ position: 'absolute'}}>
+                    {imageLoading && <ActivityIndicator color='white' size={40} style={styles.loader}/>}
+                    {
+                        currentStory?.content_type.split('/')[0] === 'image' ?
+                            <Image
+                                source={{uri: currentStory?.story_image}}
+                                resizeMode='contain'
+                                style={{ width: screenWidth, height: screenHeight }}
+                                onLoadStart={() => setImageLoading(true)}
+                                // onLoadEnd={() => setImageLoading(false)}
+                            /> :
+                            <Video
+                                source={{uri: currentStory?.story_image}}
+                                style={{width: screenWidth, height: screenHeight}}
+                                onLoadStart={() => setImageLoading(true)}
+                                onLoad={() => setImageLoading(false)}
+                                resizeMode="contain"
+                                shouldPlay={true}
+                                isLooping={false}
+                                useNativeControls={false}
+                            />
+                    }
+                    <View style={{zIndex: 1, position: 'absolute', alignSelf: 'center'}}>
+                        <Text style={styles.storyText}>{currentStory?.text}</Text>
+                    </View>
+                </View>
             </View>
         </TouchableWithoutFeedback>
     );
@@ -90,6 +135,17 @@ const styles = StyleSheet.create({
         position: 'absolute',
         borderColor: 'white',
         borderWidth: 2
+    },
+    loader: {
+        flex: 1,
+        position: 'absolute',
+        alignSelf: 'center',
+        paddingVertical: screenHeight / 2
+    },
+    storyText: {
+        color: 'brown',
+        fontSize: 18,
+        top: screenHeight - 100,
     }
 })
 

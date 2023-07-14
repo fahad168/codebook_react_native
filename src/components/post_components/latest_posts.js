@@ -83,16 +83,11 @@ const LatestPosts = () => {
         <View style={styles.latestPosts}>
             <FlatList
                 data={latestPosts}
-                renderItem={({ item, index }) => <PostComponent post={item} />}
+                renderItem={({item, index}) => <PostComponent post={item}/>}
                 nestedScrollEnabled={true}
                 showsVerticalScrollIndicator={false}
                 onEndReached={handleScroll}
-                onEndReachedThreshold={0.8}
-                snapToInterval={Dimensions.get('window').height}
-                snapToAlignment={"start"}
-                initialScrollIndex={0}
-                decelerationRate={'fast'}
-                disableIntervalMomentum
+                onEndReachedThreshold={1}
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
