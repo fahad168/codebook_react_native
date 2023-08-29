@@ -40,7 +40,6 @@ const CommentScreen = (props) => {
     const [imageVisible, setImageVisible] = useState(false)
     const [isSending, setIsSending] = useState(false)
 
-
     const headers = {
         Accept: "application/json",
         'Content-Type': 'application/json',
@@ -385,5 +384,11 @@ const styles = StyleSheet.create({
         zIndex: 1,
         marginLeft: 80,
         marginTop: 15,
+    },
+    loader: {
+        position: 'absolute',
+        zIndex: 1,
+        right: '50%',
+        top: screen.height/3,
     }
 });

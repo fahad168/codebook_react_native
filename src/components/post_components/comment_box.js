@@ -96,6 +96,9 @@ const CommentBox = ({ comment, post, handleInput, handleReply, handleReplyUser, 
                         type={type}
                         content={content}
                         post={single_comment}
+                        likeStatus={null}
+                        likesCount={null}
+                        page={'comment'}
                     />
                 </View>
                 <View style={single_comment?.parent_comment_id ? styles.child_icons : styles.icons}>

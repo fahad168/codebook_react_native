@@ -1,7 +1,4 @@
 {
-  "android": {
-    "softwareKeyboardLayoutMode": "pan"
-  },
   "expo": {
     "name": "codebook",
     "slug": "codebook",
@@ -10,6 +7,7 @@
       "**/*"
     ],
     "android": {
+      "softwareKeyboardLayoutMode": "pan",
       "permissions": [
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE"

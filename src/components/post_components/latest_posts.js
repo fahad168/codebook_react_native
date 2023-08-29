@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import PostComponent from "./post_component";
 import {
     ScrollView,
@@ -25,6 +25,8 @@ const LatestPosts = () => {
     const [page, setPage] = useState(1);
     const [refreshing, setRefreshing] = useState(true);
     const [isLoading, setIsLoading] = useState(false)
+    const [visibleVideoIndex, setVisibleVideoIndex] = useState(null);
+
     useEffect(  () => {
         if (refreshing){
             getLatestPosts()
@@ -32,6 +34,13 @@ const LatestPosts = () => {
         }
     }, [refreshing])
 
+    const onViewableItemsChanged = ({viewableItems,}) => {
+        setVisibleVideoIndex(viewableItems[0].index)
+    }
+
+    const viewabilityConfigCallbackPairs = useRef([
+        { onViewableItemsChanged },
+    ]);
     const handleScroll = () => {
         getLatestPosts()
     };
@@ -83,7 +92,10 @@ const LatestPosts = () => {
         <View style={styles.latestPosts}>
             <FlatList
                 data={latestPosts}
-                renderItem={({item, index}) => <PostComponent post={item}/>}
+                viewabilityConfigCallbackPairs={
+                    viewabilityConfigCallbackPairs.current
+                }
+                renderItem={({item, index}) => <PostComponent post={item} index={index} visibleVideoIndex={visibleVideoIndex}/>}
                 nestedScrollEnabled={true}
                 showsVerticalScrollIndicator={false}
                 onEndReached={handleScroll}

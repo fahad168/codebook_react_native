@@ -24,7 +24,7 @@ import { useNavigation } from "@react-navigation/native";
 import ShowPostModal from "../other_components/show_post_modal";
 import ShareMedia from "../other_components/share_media";
 
-const PostComponent = ({post}) => {
+const PostComponent = ({post, index, visibleVideoIndex}) => {
     const navigation = useNavigation()
     const [toggleModal, setToggleModal] = useState(false)
     const [imageLoading, setImageLoading] = useState(true);
@@ -158,25 +158,25 @@ const PostComponent = ({post}) => {
                     </Modal>
                 </TouchableOpacity>
             </View>
-            <View style={{ flex: 1 }}>
+            <View>
                 <Text style={styles.description}>{post?.description}</Text>
             </View>
             <TouchableWithoutFeedback
                 onPress={() => handleImageModal(post?.post_image, post?.content_type.split('/')[0])}>
-                <View style={{ top: -50 }}>
+                <View>
                     {imageLoading && <ActivityIndicator style={styles.loader}/>}
                     {
                         post?.content_type.split('/')[0] === 'image' ?
                             <Image source={{uri: post?.post_image}} resizeMode='contain'
-                                   style={{height: screenHeight / 2, width: screenWidth}}
+                                   style={{height: 300, width: screenWidth}}
                                    onLoadStart={() => setImageLoading(true)} onLoadEnd={() => setImageLoading(false)}
                             /> :
                             <Video
                                 source={{uri: post?.post_image}}
-                                style={{height: screenHeight / 2, width: screenWidth}}
+                                style={{height: 300, width: screenWidth}}
                                 onLoadStart={() => setImageLoading(true)} onLoadEnd={() => setImageLoading(false)}
                                 resizeMode="contain"
-                                shouldPlay={false}
+                                shouldPlay={index === visibleVideoIndex}
                                 isLooping={false}
                                 useNativeControls={false}
                             />
@@ -201,6 +201,11 @@ const PostComponent = ({post}) => {
                 content={content}
                 navigation={navigation}
                 post={post}
+                likeStatus={likeStatus}
+                likesCount={likes}
+                page={'home'}
+                likePost={likePost}
+                dislikePost={dislikePost}
             />
         </View>
     )
@@ -265,14 +270,12 @@ const styles = StyleSheet.create({
         marginRight: 15,
     },
     postIcons: {
-        justifyContent: 'space-between',
         flexDirection: 'row',
-        position: 'absolute',
-        alignSelf: "center",
-        bottom: 60
+        justifyContent: 'space-evenly',
+        paddingBottom: 10,
+        paddingTop: 5,
     },
     icons: {
-        paddingRight: 50,
     },
     dropdownContainer: {
         flex: 1,

@@ -60,13 +60,13 @@ const SignUp = ({ navigation }) => {
             result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
                 allowsEditing: true,
-                quality: 1,
+                // quality: 1,
             });
         }else if(key === 'take'){
             result = await ImagePicker.launchCameraAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.All,
                 allowsEditing: true,
-                quality: 1,
+                // quality: 1,
             });
         }
 

@@ -8,7 +8,7 @@ import {
     View,
     StyleSheet,
     Dimensions,
-    ScrollView
+    ScrollView, ImageBackground
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { Backend_Url } from '@env'
@@ -16,6 +16,7 @@ import {Video} from "expo-av";
 import {useSelector} from "react-redux";
 import axios from "axios";
 import Toast from "react-native-simple-toast";
+import {Background} from "@react-navigation/elements";
 const screen = Dimensions.get('window');
 
 const AddStoryScreen = (props) => {
@@ -66,7 +67,7 @@ const AddStoryScreen = (props) => {
         <ScrollView style={styles.storyContainer}>
             <View style={styles.innerStoryContainer}>
                 <View>
-                    <TouchableOpacity>
+                    <TouchableOpacity onPress={() => props.navigation.goBack()}>
                         <Ionicons name="close-outline" size={40} color="brown"/>
                     </TouchableOpacity>
                 </View>

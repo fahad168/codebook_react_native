@@ -18,9 +18,11 @@ const ShowStory = (props) => {
     const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
     const [progress, setProgress] = useState(Array.from({length: props.stories.length}, () => 0));
     const [imageLoading, setImageLoading] = useState(false)
+    const [isPlaying, setIsPlaying] = useState(false)
+    const [intervalId, setIntervalId] = useState(null)
+    const [elapsedTime, setElapsedTime] = useState(0);
 
     const currentStory = props.stories[currentStoryIndex];
-    console.log("stroy",currentStory)
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -41,11 +43,53 @@ const ShowStory = (props) => {
 
                     return newProgress;
                 });
+                setElapsedTime((prevElapsedTime) => prevElapsedTime + (currentStory?.duration ? currentStory.duration / 60 : 100));
             }
-        }, currentStory?.duration ? currentStory.duration/60 : 50);
+        }, currentStory?.duration ? currentStory.duration/60 : 100);
 
+        setIntervalId(interval)
         return () => clearInterval(interval);
     }, [currentStoryIndex, imageLoading]);
+
+    // const wait = () => {
+    //     clearInterval(intervalId)
+    //     setIsPlaying(false)
+    // }
+
+    // const start = () => {
+    //     const remainingDuration = currentStory?.duration ? currentStory.duration / 60 - elapsedTime : 100 - (elapsedTime / 1000);
+    //     setProgress((prevProgress) => {
+    //         const newProgress = [...prevProgress];
+    //         newProgress[currentStoryIndex] = (100 * (1 - remainingDuration / (currentStory?.duration ? currentStory.duration / 60 : 100)));
+    //
+    //         return newProgress;
+    //     });
+    //     const newInterval = setInterval(() => {
+    //         if (!imageLoading) {
+    //             setProgress((prevProgress) => {
+    //                 setIsPlaying(true)
+    //                 const newProgress = [...prevProgress];
+    //                 newProgress[currentStoryIndex] += 2;
+    //
+    //                 if (newProgress[currentStoryIndex] >= 100) {
+    //                     clearInterval(newInterval);
+    //                     if (currentStoryIndex < props.stories.length - 1) {
+    //                         setCurrentStoryIndex((prevIndex) => prevIndex + 1);
+    //                         setProgress(Array.from({ length: props.stories.length }, () => 0));
+    //                     } else {
+    //                         props.handleStoryModal();
+    //                     }
+    //                 }
+    //
+    //                 return newProgress;
+    //             });
+    //
+    //             setElapsedTime((prevElapsedTime) => prevElapsedTime + (currentStory?.duration ? currentStory.duration / 60 : 100));
+    //         }
+    //     }, remainingDuration);
+    //
+    //     setIntervalId(newInterval);
+    // };
 
     const handleStoryPress = () => {
         if (currentStoryIndex < props.stories.length - 1) {
@@ -58,7 +102,8 @@ const ShowStory = (props) => {
 
     return (
         <TouchableWithoutFeedback style={{flex: 1, justifyContent: 'center'}}
-                                  onPress={handleStoryPress}>
+                                  onPress={handleStoryPress}
+        >
             <View style={{ width: '100%' }}>
                 <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
                     {props.stories.map((story, index) => (
@@ -76,8 +121,9 @@ const ShowStory = (props) => {
                         </View>
                     ))}
                 </View>
-                <TouchableOpacity style={{ zIndex: 1 }} onPress={() => props.handleStoryModal()}>
-                    <Ionicons name="close-outline" size={30} color="white" style={{ position: 'absolute', left: screenWidth - 35, top: 10}} />
+                <TouchableOpacity style={{zIndex: 100}} onPress={() => props.handleStoryModal()}>
+                    <Ionicons name="close-outline" size={30} color="white"
+                              style={{position: 'absolute', left: screenWidth - 35, top: 10}}/>
                 </TouchableOpacity>
                 <TouchableOpacity style={{zIndex: 1, flexDirection: 'row'}}>
                     <View>
@@ -86,9 +132,12 @@ const ShowStory = (props) => {
                             resizeMode='contain'
                             style={styles.userProfile}/>
                     </View>
-                    <View style={{ left: 80, top: 18 }}>
+                    <View style={{left: 80, top: 18}}>
                         <Text style={{color: 'white', fontSize: 15}}>{currentStory?.user?.username}</Text>
-                        <Text style={{color: 'white', fontSize: 12}}>{moment(currentStory?.created_at).startOf("seconds").fromNow()}</Text>
+                        <Text style={{
+                            color: 'white',
+                            fontSize: 12
+                        }}>{moment(currentStory?.created_at).startOf("seconds").fromNow()}</Text>
                     </View>
                 </TouchableOpacity>
                 <View style={{ position: 'absolute'}}>
@@ -100,15 +149,15 @@ const ShowStory = (props) => {
                                 resizeMode='contain'
                                 style={{ width: screenWidth, height: screenHeight }}
                                 onLoadStart={() => setImageLoading(true)}
-                                // onLoadEnd={() => setImageLoading(false)}
+                                onLoadEnd={() => setImageLoading(false)}
                             /> :
                             <Video
                                 source={{uri: currentStory?.story_image}}
                                 style={{width: screenWidth, height: screenHeight}}
                                 onLoadStart={() => setImageLoading(true)}
-                                onLoad={() => setImageLoading(false)}
+                                onLoad={() => {setImageLoading(false); setIsPlaying(true)}}
                                 resizeMode="contain"
-                                shouldPlay={true}
+                                shouldPlay={isPlaying}
                                 isLooping={false}
                                 useNativeControls={false}
                             />

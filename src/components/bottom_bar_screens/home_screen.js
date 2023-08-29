@@ -63,8 +63,10 @@ const HomeScreen = () => {
     const [modalVisible, setModalVisible] = useState(false)
     const [storyModalVisible, setStoryModalVisible] = useState(false)
     const [storyPicker, setStoryPicker] = useState(false)
-    const [addStory, setAddStory] = useState(false)
+    const [otherUserStoryModal, setOtherUserStoryModal] = useState(false)
     const [currentUserStories, setCurrentUserStories] = useState([])
+    const [otherStories, setOtherStories] = useState([])
+    const [otherSingleUserStories, setOtherSingleUserStories] = useState([])
     const [image, setImage] = useState([]);
     const dispatch = useDispatch();
     const navigation = useNavigation()
@@ -78,6 +80,7 @@ const HomeScreen = () => {
     useEffect(() => {
         if (homeFocused){
             getCurrentUserStories()
+            otherUserStories()
         }
     }, [homeFocused]);
 
@@ -85,8 +88,16 @@ const HomeScreen = () => {
         axios
             .get(`${Backend_Url}/stories` , {headers})
             .then((res) => {
-                console.log(res?.data?.stories)
                 setCurrentUserStories(res?.data?.stories)
+            })
+            .catch((error) => console.log(error));
+    }
+
+    const otherUserStories = () => {
+        axios
+            .get(`${Backend_Url}/stories/other_user_stories` , {headers})
+            .then((res) => {
+                setOtherStories(res?.data)
             })
             .catch((error) => console.log(error));
     }
@@ -130,25 +141,24 @@ const HomeScreen = () => {
     }
 
     const handleStoryPicker = () => {
-        setStoryPicker(false)
+        setStoryPicker(!storyPicker)
     }
 
+    const handleOtherUserStoryModal = () => {
+        setOtherUserStoryModal(!otherUserStoryModal)
+    }
 
-    const stories = [
-        { id: 1, url: require('../../../assets/splashscreen.jpg') },
-        { id: 2, url: require('../../../assets/gradient.png') },
-        { id: 3, url: require('../../../assets/dummy_wallpaper.jpg') },
-        { id: 4, url: require('../../../assets/profile_dummy.jpg') },
-
-    ]
+    const setUserStories = (stories) => {
+        setOtherSingleUserStories(stories)
+    }
 
     return(
         <View style={styles.mainView}>
             <Button title='Logout' onPress={() => dispatch(Logout())}></Button>
             <View style={styles.innerView}>
-                <TouchableOpacity style={{ zIndex: 1 }} onPress={currentUserStories !== [] ? handleStoryModal : handleStoryPicker}>
+                <TouchableOpacity style={{ zIndex: 1 }} onPress={currentUserStories.length !== 0 ? handleStoryModal : handleStoryPicker}>
                     <View>
-                        <Image source={user.img ? { uri: user.img } : require('../../../assets/dummy_profile.png')} resizeMode='contain' style={user.img ? [{ borderColor: currentUserStories !== [] ? 'brown' : 'black' } ,styles.profileImage] : [ { borderColor: currentUserStories !== [] ? 'brown' : 'black' } ,styles.dummy]}/>
+                        <Image source={user?.img ? { uri: user?.img } : require('../../../assets/dummy_profile.png')} resizeMode='contain' style={user?.img ? [{ borderColor: currentUserStories !== [] ? 'brown' : 'black' } ,styles.profileImage] : [ { borderColor: currentUserStories !== [] ? 'brown' : 'black' } ,styles.dummy]}/>
                         <View style={styles.addIcon}>
                             <Ionicons name='add-circle' size={25} color='white'/>
                         </View>
@@ -158,41 +168,16 @@ const HomeScreen = () => {
                     modalVisible ?
                         <View style={styles.storyShowView}>
                             <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
-                                <TouchableOpacity onPress={handleStoryModal}>
-                                    <Image source={require('../../../assets/profile_dummy.jpg')} resizeMode='contain'
-                                           style={styles.stories}/>
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={handleStoryModal}>
-                                    <Image source={require('../../../assets/gradient.png')} resizeMode='contain'
-                                           style={styles.stories}/>
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={handleStoryModal}>
-                                    <Image source={require('../../../assets/splashscreen.jpg')} resizeMode='contain'
-                                           style={styles.stories}/>
-                                </TouchableOpacity>
-                                <TouchableOpacity>
-                                    <Image source={require('../../../assets/gradient.png')} resizeMode='contain'
-                                           style={styles.stories}/>
-                                </TouchableOpacity>
-                                <TouchableOpacity>
-                                    <Image source={require('../../../assets/gradient.png')} resizeMode='contain'
-                                           style={styles.stories}/>
-                                </TouchableOpacity>
-                                <TouchableOpacity>
-                                    <Image source={require('../../../assets/gradient.png')} resizeMode='contain'
-                                           style={styles.stories}/>
-                                </TouchableOpacity>
-                                <TouchableOpacity>
-                                    <Image source={require('../../../assets/gradient.png')} resizeMode='contain'
-                                           style={styles.stories}/>
-                                </TouchableOpacity>
-                                <TouchableOpacity>
-                                    <Image source={require('../../../assets/gradient.png')} resizeMode='contain'
-                                           style={styles.stories}/>
-                                </TouchableOpacity>
+                                {
+                                    otherStories?.other_user_stories?.map((story) => (
+                                        <TouchableOpacity onPress={() => {setUserStories(story?.stories); handleOtherUserStoryModal()}}>
+                                            <Image source={{ uri: story?.stories[0]?.user?.profile_image}} resizeMode='contain'
+                                                   style={styles.stories}/>
+                                        </TouchableOpacity>
+                                    ))
+                                }
                             </ScrollView>
-                        </View> :
-                        ""
+                        </View> : ""
                 }
                 {
                     modalVisible ?
@@ -216,38 +201,24 @@ const HomeScreen = () => {
                     <Tab.Screen name="Trending" component={TrendingPosts} />
                 </Tab.Navigator>
             </View>
-            {/*<Modal style={{margin: 0}}*/}
-            {/*       isVisible={storyModalVisible}*/}
-            {/*       animationIn={"slideInUp"}*/}
-            {/*       onSwipeComplete={handleStoryModal}*/}
-            {/*       swipeDirection={'down'}*/}
-            {/*       swipeThreshold={100}*/}
-            {/*       backdropColor='transparent'*/}
-            {/*       hasBackdrop={true}*/}
-            {/*>*/}
-            {/*    <SafeAreaView style={styles.storyModalContainer}>*/}
-            {/*        <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>*/}
-            {/*            <ShowStory stories={stories} handleStoryModal={handleStoryModal}/>*/}
-            {/*        </View>*/}
-            {/*    </SafeAreaView>*/}
-            {/*</Modal>*/}
             <Modal style={{margin: 0}}
-                   isVisible={currentUserStories ? storyModalVisible : storyPicker}
+                   isVisible={currentUserStories.length !== 0 ? storyModalVisible : storyPicker}
                    animationIn={"slideInUp"}
-                   onSwipeComplete={currentUserStories ? handleStoryModal : handleStoryPicker}
+                   onSwipeComplete={currentUserStories.length !== 0 ? handleStoryModal : handleStoryPicker}
                    swipeDirection={'down'}
                    swipeThreshold={100}
                    backdropColor='transparent'
                    hasBackdrop={true}
-                   onBackdropPress={handleStoryPicker}
+                   onBackdropPress={currentUserStories.length !== 0 ? handleStoryModal : handleStoryPicker}
             >
                 {
-                    currentUserStories !== [] ?
+                    currentUserStories.length !== 0 ?
                         <SafeAreaView style={styles.storyModalContainer}>
                             <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
                                 <ShowStory stories={currentUserStories} handleStoryModal={handleStoryModal}/>
                             </View>
-                        </SafeAreaView> :
+                        </SafeAreaView>
+                        :
                         <SafeAreaView style={styles.storyAddContainer}>
                             <View style={styles.modalContainer}>
                                 <View style={styles.modalContent}>
@@ -266,30 +237,22 @@ const HomeScreen = () => {
                         </SafeAreaView>
                 }
             </Modal>
-            {/*<Modal style={{margin: 0}}*/}
-            {/*       isVisible={storyPicker}*/}
-            {/*       animationIn={"slideInUp"}*/}
-            {/*       onSwipeComplete={handleStoryPicker}*/}
-            {/*       swipeDirection={'down'}*/}
-            {/*       swipeThreshold={100}*/}
-            {/*       backdropColor='transparent'*/}
-            {/*       hasBackdrop={true}*/}
-            {/*>*/}
-            {/*    <SafeAreaView style={styles.storyModalContainer}>*/}
-            {/*            <View style={styles.modalContainer}>*/}
-            {/*                <View style={styles.modalContent}>*/}
-            {/*                    <TouchableOpacity style={{ alignSelf: 'center' }} onPress={() => selectStoryPic('select')}>*/}
-            {/*                        <Ionicons name='images-outline' size={50} color='white'/>*/}
-            {/*                        <Text style={styles.modalText}>Select Photo</Text>*/}
-            {/*                    </TouchableOpacity>*/}
-            {/*                    <TouchableOpacity style={{ alignSelf: 'center' }} onPress={() => selectStoryPic('take')}>*/}
-            {/*                        <Ionicons name='camera-outline' size={50} color='white'/>*/}
-            {/*                        <Text style={styles.modalText}>Take Photo</Text>*/}
-            {/*                    </TouchableOpacity>*/}
-            {/*                </View>*/}
-            {/*            </View>*/}
-            {/*    </SafeAreaView>*/}
-            {/*</Modal>*/}
+            <Modal style={{margin: 0}}
+                   isVisible={otherUserStoryModal}
+                   animationIn={"slideInUp"}
+                   onSwipeComplete={handleOtherUserStoryModal}
+                   swipeDirection={'down'}
+                   swipeThreshold={100}
+                   backdropColor='transparent'
+                   hasBackdrop={true}
+                   onBackdropPress={handleOtherUserStoryModal}
+            >
+                <SafeAreaView style={styles.storyModalContainer}>
+                    <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+                        <ShowStory stories={otherSingleUserStories} handleStoryModal={handleOtherUserStoryModal}/>
+                    </View>
+                </SafeAreaView>
+            </Modal>
         </View>
     )
 }
